@@ -273,7 +273,7 @@ def add_car(message):
 def delete_car(message):
     bot.send_message(
         user_data['chat_id'],
-        "Введите 'Подтвердить', если хотите удалить машину",
+        "Введите 'Подтвердить', если хотите перенести машину в архив",
     )
     bot.register_next_step_handler(message, delete)
 
@@ -341,6 +341,11 @@ def print_notes_for_car():
     ))
     car = Car()
     result = car.print_note(user_data['current_car_id'])
+    if not result:
+        bot.send_message(user_data['chat_id'], 'Для этой машины пока нет записей')
+        return None
+    if 'Ошибка' in result:
+        bot.send_message(user_data['chat_id'], result)
     name = car.get_car_name(user_data['current_car_id'])
     data = []
     summary = f'{name}\n'
