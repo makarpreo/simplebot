@@ -61,11 +61,6 @@ def show_main_menu(chat_id):
 def show_second_menu(chat_id):
     markup = types.InlineKeyboardMarkup(row_width=1)
 
-    # Кнопки второго меню
-    btn_show_list = types.InlineKeyboardButton(
-        text="📋 Список активных машин",
-        callback_data="command:/show_car_list"
-    )
     btn_set_id = types.InlineKeyboardButton(
         text="🔢 Выбрать машину",
         callback_data="command:/select_car"
@@ -74,12 +69,8 @@ def show_second_menu(chat_id):
         text="📝 Добавить запись",
         callback_data="command:/add_note"
     )
-    btn_print_notes = types.InlineKeyboardButton(
-        text="📄 Вывести записи",
-        callback_data="command:/print_notes"
-    )
 
-    #old_v markup.add(btn_show_list,  btn_add_note, btn_print_notes)
+    # old_v markup.add(btn_show_list,  btn_add_note, btn_print_notes)
     markup.add(btn_set_id, btn_add_note)
 
     bot.send_message(
@@ -305,6 +296,7 @@ def add_note_to_car(message):
     bot.send_message(message.chat.id, result)
     print_notes_for_car()
 
+
 @bot.message_handler(commands=['show_car_list'])
 def show_car_command(message):
     car = Car()
@@ -360,20 +352,23 @@ def print_notes_for_car():
         prev_i = i
     bot.send_message(user_data['chat_id'], summary, reply_markup=markup)
 
+
 @bot.callback_query_handler(func=lambda call: call.data == 'edit_last_note')
 def ask_edit_last_note(call):
-
     """Обработчик отмены выбора машины"""
     # car = Car()
     # car.edit_last_note()
     bot.send_message(user_data['chat_id'], "Введите новое сообщение")
     bot.register_next_step_handler(call.message, edit_last_note)
 
+
 def edit_last_note(message):
     car = Car()
     print(car.edit_last_note(username=user_data['username'], text=message.text, car_id=user_data['current_car_id']))
     print_notes_for_car()
+
+
 # Запуск бота
 if __name__ == '__main__':
     print("Бот запущен!")
-    bot.infinity_polling()
+    bot.infinity_polling(timeout=10, long_polling_timeout=5)

@@ -288,6 +288,7 @@ class Note(Table):
                 cursor.close()
                 conn.close()
 
+
 # Пример использования
 if __name__ == '__main__':
     car = Car()
