@@ -168,7 +168,8 @@ class Car(Table):
                 name = cursor.fetchone()
                 if name:
                     return name[0]
-                return 'ошибка, нет машины с таким id'
+                print(123123123)
+                return ''
         except Exception as ex:
             return f'Ошибка: {ex}'
         finally:

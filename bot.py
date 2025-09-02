@@ -3,11 +3,11 @@ import telebot
 import telebot.types as types
 from telebot.types import ReplyKeyboardMarkup, InlineKeyboardMarkup
 import config  # модуль с конфигурационными данными (токен бота и т.д.)
-from main import Car, Note
+from main import *
 
 # Инициализация бота
 bot = telebot.TeleBot(config.TOKEN)
-user_data = {'current_car_id': 14, 'chat_id': 0, 'username': ''}
+user_data = {'current_car_id': 14, 'chat_id': 0, 'username': '', 'current_car_name': ''}
 
 
 @bot.message_handler(commands=['start'])
@@ -69,18 +69,13 @@ def show_second_menu(chat_id):
         text="📝 Добавить запись",
         callback_data="command:/add_note"
     )
-
+    car = Car()
     # old_v markup.add(btn_show_list,  btn_add_note, btn_print_notes)
     markup.add(btn_set_id, btn_add_note)
-
     bot.send_message(
         chat_id,
         "📋 <b>Дополнительные команды</b>\n\n"
-        f"<b>ТЕКУЩАЯ МАШИНА: ID {user_data['current_car_id']}</b>\n"
-        "• 📋 <code>/show_car_list</code> - список активных машин\n"
-        "• 🔢 <code>/select_car</code> - выбрать машину из списка\n"
-        "• 📝 <code>/add_note</code> - добавить запись к машине\n"
-        "• 📄 <code>/print_notes</code> - вывести записи машины",
+        f"<b>ТЕКУЩАЯ МАШИНА:ID {user_data['current_car_id']}</b>\n",
         parse_mode='HTML',
         reply_markup=markup
     )
@@ -121,7 +116,7 @@ def handle_command_callback(call):
         print_notes_for_car()
 
     # Подтверждаем нажатие кнопки
-    bot.answer_callback_query(call.id, f"Выполняется: {command}")
+    # bot.answer_callback_query(call.id, f"Выполняется: {command}")
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('select_car:'))
@@ -185,11 +180,10 @@ def select_car_from_list(message):
         callback_data="cancel_select"
     )
     markup.add(btn_cancel)
-
     bot.send_message(
         message.chat.id,
         "📋 <b>Выберите машину для работы:</b>\n\n"
-        f"Текущая машина: ID {user_data['current_car_id']}",
+        f"Текущая машина:ID {user_data['current_car_id']}",
         parse_mode='HTML',
         reply_markup=markup
     )
