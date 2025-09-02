@@ -7,7 +7,7 @@ from main import Car, Note
 
 # Инициализация бота
 bot = telebot.TeleBot(config.TOKEN)
-user_data = {'current_car_id': 14, 'chat_id': 0, 'username': ''}
+user_data = {'current_car_id': 0, 'chat_id': 0, 'username': '',}
 
 
 @bot.message_handler(commands=['start'])
@@ -44,15 +44,15 @@ def show_main_menu(chat_id):
     )
     markup.row(btn_create, btn_clear, btn_delete)
     markup.add(btn_clear, btn_show_list, btn_set_id)
+    user_data['chat_id'] = chat_id
 
+    # Получаем название машины для красивого сообщения
+    car = Car()
+    car_name = car.get_car_name(user_data['current_car_id']) or f"ID {user_data['current_car_id']}"
     bot.send_message(
         chat_id,
         "🤖 <b>Главное меню</b>\n\n"
-        f"<b>ТЕКУЩАЯ МАШИНА: ID {user_data['current_car_id']}</b>\n"
-        "• 🚗 <code>/create_car</code> - создание машины\n"
-        "• 🗑️ <code>/delete_car</code> - удаление машины\n"
-        "• 📋 <code>/show_car_list</code> - список активных машин\n"
-        "• 🔢 <code>/select_car</code> - выбрать машину из списка",
+        f"<b>ТЕКУЩАЯ МАШИНА: ID {user_data['current_car_id']} {car_name}</b>\n",
         parse_mode='HTML',
         reply_markup=markup
     )
@@ -72,19 +72,15 @@ def show_second_menu(chat_id):
 
     # old_v markup.add(btn_show_list,  btn_add_note, btn_print_notes)
     markup.add(btn_set_id, btn_add_note)
-
+    car = Car()
+    car_name = car.get_car_name(user_data['current_car_id']) or f"ID {user_data['current_car_id']}"
     bot.send_message(
         chat_id,
-        "📋 <b>Дополнительные команды</b>\n\n"
-        f"<b>ТЕКУЩАЯ МАШИНА: ID {user_data['current_car_id']}</b>\n"
-        "• 📋 <code>/show_car_list</code> - список активных машин\n"
-        "• 🔢 <code>/select_car</code> - выбрать машину из списка\n"
-        "• 📝 <code>/add_note</code> - добавить запись к машине\n"
-        "• 📄 <code>/print_notes</code> - вывести записи машины",
+        "🤖 <b>Главное меню</b>\n\n"
+        f"<b>ТЕКУЩАЯ МАШИНА: ID {car_name}</b>\n",
         parse_mode='HTML',
         reply_markup=markup
     )
-
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('command:'))
 def handle_command_callback(call):
@@ -185,11 +181,12 @@ def select_car_from_list(message):
         callback_data="cancel_select"
     )
     markup.add(btn_cancel)
-
+    car = Car()
+    car_name = car.get_car_name(user_data['current_car_id']) or f"ID {user_data['current_car_id']}"
     bot.send_message(
         message.chat.id,
         "📋 <b>Выберите машину для работы:</b>\n\n"
-        f"Текущая машина: ID {user_data['current_car_id']}",
+        f"Текущая машина: ID{user_data['current_car_id']} {car_name}",
         parse_mode='HTML',
         reply_markup=markup
     )
