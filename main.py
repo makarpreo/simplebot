@@ -239,6 +239,59 @@ class Note(Table):
     def __init__(self):
         super().__init__('notes')
 
+    def get_notes_with_ids(self, car_id):
+        """Возвращает список записей с ID: [(id, note_text, username), ...]"""
+        try:
+            conn = self.get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT note_id, note, user_id FROM notes WHERE car_id = %s ORDER BY note_id",
+                (car_id,)
+            )
+            result = cursor.fetchall()
+            return result
+        except Error as e:
+            return f"Ошибка при получении записей: {e}"
+        finally:
+            if conn.is_connected():
+                cursor.close()
+                conn.close()
+
+    def update_note_text(self, note_id, new_text):
+        """Обновляет текст записи по ID"""
+        try:
+            conn = self.get_db_connection()
+
+            cursor = conn.cursor()
+            cursor.execute(
+                "UPDATE notes SET note = %s WHERE note_id = %s",
+                (new_text, note_id)
+            )
+            conn.commit()
+            return f"Запись #{note_id} успешно обновлена"
+        except Error as e:
+            return f"Ошибка при обновлении записи: {e}"
+        finally:
+            if conn.is_connected():
+                cursor.close()
+                conn.close()
+
+    def delete_note_by_id(self, note_id):
+        """Удаляет запись по ID"""
+        try:
+            conn = self.get_db_connection()
+
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM notes WHERE note_id = %s", (note_id,))
+            conn.commit()
+            return f"Запись #{note_id} успешно удалена"
+        except Error as e:
+            return f"Ошибка при удалении записи: {e}"
+        finally:
+            if conn.is_connected():
+                cursor.close()
+                conn.close()
+
     def add_note(self, note_text, car_id, user_id):
         """Добавляет новую заметку"""
         try:
