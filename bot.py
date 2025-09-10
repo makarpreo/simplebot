@@ -44,18 +44,23 @@ def show_second_menu(chat_id, user_id):
         text="🔢 Выбрать машину",
         callback_data="command:/select_car"
     )
-    btn_add_note = types.InlineKeyboardButton(
-        text="📝 Добавить запись",
-        callback_data="command:/add_note"
-    )
+    # btn_add_works = types.InlineKeyboardButton(
+    #     text="📝 Добавить работы",
+    #     callback_data="add_works"
+    # )
+    # btn_add_parts = types.InlineKeyboardButton(
+    #     text="📝 Добавить запчасти",
+    #     callback_data="add_parts"
+    # )
 
-    markup.add(btn_set_id, btn_add_note)
+    markup.add(btn_set_id)
+    # markup.add(btn_set_id, btn_add_parts, btn_add_works)
     car = Car()
     car_name = car.get_car_name(user_data['current_car_id']) or f"ID {user_data['current_car_id']}"
     bot.send_message(
         chat_id,
         "🤖 <b>Главное меню</b>\n\n"
-        f"<b>ТЕКУЩАЯ МАШИНА: ID {car_name}</b>\n",
+        f"<b>ТЕКУЩАЯ МАШИНА: {car_name}</b>\n",
         parse_mode='HTML',
         reply_markup=markup
     )
@@ -80,8 +85,10 @@ def handle_command_callback(call):
 
     if command == '/select_car':
         select_car_from_list(mock_message)
-    elif command == '/add_note':
-        ask_note(mock_message)
+    # elif command == '/add_parts':
+    #     ask_parts(mock_message)
+    # elif command == '/add_works':
+    #     ask_works(mock_message)
 
     bot.answer_callback_query(call.id, f"Выполняется: {command}")
 
@@ -144,7 +151,7 @@ def select_car_from_list(message):
     bot.send_message(
         message.chat.id,
         "📋 <b>Выберите машину для работы:</b>\n\n"
-        f"Текущая машина: ID{user_data['current_car_id']} {car_name}",
+        f"Текущая машина: {car_name}",
         parse_mode='HTML',
         reply_markup=markup
     )
@@ -159,20 +166,23 @@ def handle_cancel_selection(call):
     bot.answer_callback_query(call.id, "Отменено")
 
 
-def ask_note(message):
-    user_id = message.from_user.id
+@bot.callback_query_handler(func=lambda call: call.data == 'add_works')
+def ask_works(call):
+    user_id = call.from_user.id
     user_data = get_user_data(user_id)
-
-    markup = ReplyKeyboardMarkup()
+    markup = types.InlineKeyboardMarkup(row_width=1)
+    markup.add(
+        types.InlineKeyboardButton(text="❌ Нет, отмена", callback_data=f"cancel_action:{user_id}")
+    )
     bot.send_message(
-        message.chat.id,
+        user_data['chat_id'],
         "Введите запись которую вы хотите добавить:",
         reply_markup=markup
     )
-    bot.register_next_step_handler(message, lambda m: add_note_to_car(m, user_id))
+    bot.register_next_step_handler(call.message, lambda m: add_works_to_car(m, user_id))
 
 
-def add_note_to_car(message, user_id):
+def add_works_to_car(message, user_id):
     user_data = get_user_data(user_id)
 
     note = Note()
@@ -180,7 +190,38 @@ def add_note_to_car(message, user_id):
     result = note.add_note(
         note_text=message.text,
         car_id=user_data['current_car_id'],
-        user_id=username
+        user_id=username,
+        note_type=1
+    )
+    bot.send_message(message.chat.id, result)
+    print_notes_for_car(user_id)
+
+@bot.callback_query_handler(func=lambda call: call.data == 'add_parts')
+def ask_parts(call):
+    user_id = call.from_user.id
+    user_data = get_user_data(user_id)
+    markup = types.InlineKeyboardMarkup(row_width=1)
+    markup.add(
+        types.InlineKeyboardButton(text="❌ Нет, отмена", callback_data=f"cancel_action:{user_id}")
+    )
+    bot.send_message(
+        user_data['chat_id'],
+        "Введите запись которую вы хотите добавить:",
+        reply_markup=markup
+    )
+    bot.register_next_step_handler(call.message, lambda m: add_parts_to_car(m, user_id))
+
+
+def add_parts_to_car(message, user_id):
+    user_data = get_user_data(user_id)
+
+    note = Note()
+    username = message.from_user.username or message.from_user.first_name or f"user_{user_id}"
+    result = note.add_note(
+        note_text=message.text,
+        car_id=user_data['current_car_id'],
+        user_id=username,
+        note_type=0
     )
     bot.send_message(message.chat.id, result)
     print_notes_for_car(user_id)
@@ -194,15 +235,20 @@ def print_notes_for_car(user_id):
         text="Редактировать сообщения",
         callback_data=f"edit_last_note:{user_id}"
     ))
-    markup.add(types.InlineKeyboardButton(
-        text="📝 Добавить запись",
-        callback_data="command:/add_note"
-    ))
-
+    btn_add_works = types.InlineKeyboardButton(
+        text="📝 Добавить работы",
+        callback_data="add_works"
+    )
+    btn_add_parts = types.InlineKeyboardButton(
+        text="📝 Добавить запчасти",
+        callback_data="add_parts"
+    )
+    markup.add(btn_add_parts, btn_add_works)
     car = Car()
     note = Note()
 
     result = note.get_notes_with_ids(user_data['current_car_id'])
+    print(result)
 
     if not result:
         bot.send_message(user_data['chat_id'], 'Для этой машины пока нет записей')
@@ -213,26 +259,44 @@ def print_notes_for_car(user_id):
         return
 
     user_data['notes_data'] = {}
-    for note_id, note_text, username in result:
-        user_data['notes_data'][note_id] = (note_text, username)
+    for note_id, note_text, username, note_type in result:
+        user_data['notes_data'][note_id] = (note_text, username, note_type)
 
     name = car.get_car_name(user_data['current_car_id']) or f"ID {user_data['current_car_id']}"
     summary = f'🚗 {name}\n\n'
 
-    user_notes = {}
-    for note_id, note_text, username in result:
-        if username not in user_notes:
-            user_notes[username] = []
-        user_notes[username].append(note_text)
+    # Группировка записей по типу и пользователю
+    notes_by_type = {0: {}, 1: {}}  # 0 = запчасти, 1 = работы
 
-    for username, notes in user_notes.items():
-        summary += f'👤 @{username}:\n'
-        for i, note_text in enumerate(notes, 1):
-            summary += f'    {i}. {note_text}\n'
-        summary += '\n'
+    for note_id, note_text, username, note_type in result:
+        if note_type not in notes_by_type:
+            notes_by_type[note_type] = {}
 
-    bot.send_message(user_data['chat_id'], summary, reply_markup=markup)
+        if username not in notes_by_type[note_type]:
+            notes_by_type[note_type][username] = []
 
+        notes_by_type[note_type][username].append(note_text)
+
+    # Формирование summary с группировкой
+    # Сначала запчасти (type = 0)
+    if notes_by_type.get(0):
+        summary += "🔧 <b>Запчасти:</b>\n"
+        for username, notes in notes_by_type[0].items():
+            summary += f"  👤 @{username}:\n"
+            for i, note_text in enumerate(notes, 1):
+                summary += f"    {i}. {note_text}\n"
+            summary += "\n"
+        summary += "\n"
+
+    # Затем работы (type = 1)
+    if notes_by_type.get(1):
+        summary += "🛠️ <b>Работы:</b>\n"
+        for username, notes in notes_by_type[1].items():
+            summary += f"  👤 @{username}:\n"
+            for i, note_text in enumerate(notes, 1):
+                summary += f"    {i}. {note_text}\n"
+            summary += "\n"
+    bot.send_message(user_data['chat_id'], summary, parse_mode='HTML', reply_markup=markup)
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('edit_last_note:'))
 def ask_edit_last_note(call):
@@ -249,12 +313,12 @@ def ask_edit_last_note(call):
         return
 
     user_data['notes_data'] = {}
-    for note_id, note_text, username in result:
+    for note_id, note_text, username, note_type in result:
         user_data['notes_data'][note_id] = (note_text, username)
 
     markup = types.InlineKeyboardMarkup(row_width=1)
 
-    for note_id, note_text, username in result:
+    for note_id, note_text, username, note_type in result:
         truncated_text = (note_text[:17] + "...") if len(note_text) > 20 else note_text
 
         btn_note = types.InlineKeyboardButton(
@@ -271,8 +335,7 @@ def ask_edit_last_note(call):
 
     bot.send_message(
         user_data['chat_id'],
-        "📋 <b>Выберите сообщение для редактирования:</b>\n\n"
-        "💡 <i>Цифра перед текстом - ID сообщения в базе данных</i>",
+        "📋 <b>Выберите сообщение для редактирования:</b>\n\n",
         parse_mode='HTML',
         reply_markup=markup
     )
@@ -310,7 +373,6 @@ def handle_note_selection(call):
     bot.send_message(
         user_data['chat_id'],
         f"📝 <b>Сообщение для редактирования:</b>\n\n"
-        f"<b>ID в БД:</b> {note_id}\n"
         f"<b>Пользователь:</b> @{username}\n"
         f"<b>Текст:</b>\n<i>{display_text}</i>\n\n"
         f"Выберите действие:",
@@ -339,13 +401,16 @@ def start_edit_note_text(call):
     user_data['editing_note_text'] = note_text
 
     display_text = note_text[:100] + "..." if len(note_text) > 100 else note_text
-
+    markup = types.InlineKeyboardMarkup(row_width=1)
+    markup.add(
+        types.InlineKeyboardButton(text="❌ Нет, отмена", callback_data=f"cancel_action:{user_id}")
+    )
     bot.send_message(
         user_data['chat_id'],
-        f"✏️ <b>Редактирование сообщения #{note_id}:</b>\n\n"
-        f"<b>Текущий текст:</b>\n<i>{display_text}</i>\n\n"
+        f"✏️Редактирование\n"
+        f"<b>Текущий текст:</b>\n<code>{display_text}</code>\n\n"
         f"Введите новый текст сообщения:",
-        parse_mode='HTML'
+        parse_mode='HTML', reply_markup=markup
     )
 
     bot.register_next_step_handler(call.message, lambda m: edit_note_text(m, user_id))
@@ -471,4 +536,4 @@ def handle_cancel_note_selection(call):
 # Запуск бота
 if __name__ == '__main__':
     print("Бот запущен!")
-    bot.infinity_polling(timeout=10, long_polling_timeout=5)
+    bot.infinity_polling()

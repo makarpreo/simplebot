@@ -168,7 +168,6 @@ class Car(Table):
                 name = cursor.fetchone()
                 if name:
                     return name[0]
-                print(123123123)
                 return ''
         except Exception as ex:
             return f'Ошибка: {ex}'
@@ -245,7 +244,7 @@ class Note(Table):
             conn = self.get_db_connection()
             cursor = conn.cursor()
             cursor.execute(
-                "SELECT note_id, note, user_id FROM notes WHERE car_id = %s ORDER BY note_id",
+                "SELECT note_id, note, user_id, note_type FROM notes WHERE car_id = %s ORDER BY note_id",
                 (car_id,)
             )
             result = cursor.fetchall()
@@ -292,14 +291,14 @@ class Note(Table):
                 cursor.close()
                 conn.close()
 
-    def add_note(self, note_text, car_id, user_id):
+    def add_note(self, note_text, car_id, user_id, note_type):
         """Добавляет новую заметку"""
         try:
             conn = self.get_db_connection()
             if conn and conn.is_connected():
                 cursor = conn.cursor()
-                query = 'INSERT INTO notes (note, car_id, user_id) VALUES (%s, %s, %s);'
-                cursor.execute(query, (note_text, car_id, user_id))
+                query = 'INSERT INTO notes (note, car_id, user_id, note_type) VALUES (%s, %s, %s, %s);'
+                cursor.execute(query, (note_text, car_id, user_id, note_type))
                 conn.commit()
                 if conn and conn.is_connected():
                     cursor.close()
