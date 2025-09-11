@@ -346,7 +346,7 @@ class Note(Table):
 if __name__ == '__main__':
     car = Car()
     note = Note()
-    print(car.edit_last_note(car_id=15, username='makarpreo', text='new text'))
+    print(note.get_notes_with_ids(30))
     # cars.print_note(7)
     # cars.show_active_list()
     print('success')

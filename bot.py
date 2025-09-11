@@ -266,7 +266,7 @@ def print_notes_for_car(user_id):
     summary = f'🚗 {name}\n\n'
 
     # Группировка записей по типу и пользователю
-    notes_by_type = {0: {}, 1: {}}  # 0 = запчасти, 1 = работы
+    notes_by_type = {0: {}, 1: {}, None: {}}  # 0 = запчасти, 1 = работы
 
     for note_id, note_text, username, note_type in result:
         if note_type not in notes_by_type:
@@ -276,7 +276,14 @@ def print_notes_for_car(user_id):
             notes_by_type[note_type][username] = []
 
         notes_by_type[note_type][username].append(note_text)
-
+    if notes_by_type.get(None):
+        print(notes_by_type.get(None))
+        summary += "🛠️ <b>Старые записи:</b>\n"
+        for username, notes in notes_by_type.get(None).items():
+            summary += f"  👤 @{username}:\n"
+            for i, note_text in enumerate(notes, 1):
+                summary += f"    {i}. {note_text}\n"
+            summary += "\n"
     # Формирование summary с группировкой
     # Сначала запчасти (type = 0)
     if notes_by_type.get(0):
@@ -296,6 +303,8 @@ def print_notes_for_car(user_id):
             for i, note_text in enumerate(notes, 1):
                 summary += f"    {i}. {note_text}\n"
             summary += "\n"
+
+
     bot.send_message(user_data['chat_id'], summary, parse_mode='HTML', reply_markup=markup)
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('edit_last_note:'))
