@@ -9,7 +9,26 @@ bot = telebot.TeleBot(config.TOKEN)
 
 # Хранилище сессий пользователей
 user_sessions = {}
-
+user_id_list = [5506674973, #макан
+                997097309, #макар
+                24260386, #папа
+                1576118658, #саша солома
+                7645088510, #руслан
+                1497728313, #alexnader
+                1062205174] #денис
+def id_handler(func):
+    """Декоратор для обработки ошибок"""
+    def wrapper(*args, **kwargs):
+        user_info = None
+        if args[0] in user_id_list:
+            print('first if')
+            return func(*args, **kwargs)
+        if args and hasattr(args[0], 'from_user'):
+            user = args[0].from_user
+            print('second if')
+            if user.id in user_id_list:
+                return func(*args, **kwargs)
+    return wrapper
 
 def get_user_data(user_id):
     """Получает или создает данные пользователя"""
@@ -24,7 +43,7 @@ def get_user_data(user_id):
         }
     return user_sessions[user_id]
 
-
+@id_handler
 @bot.message_handler(commands=['start'])
 def start_command(message):
     user_id = message.from_user.id
@@ -35,7 +54,7 @@ def start_command(message):
 
     show_second_menu(message.chat.id, user_id)
 
-
+@id_handler
 def show_second_menu(chat_id, user_id):
     user_data = get_user_data(user_id)
     markup = types.InlineKeyboardMarkup(row_width=1)
@@ -67,6 +86,7 @@ def show_second_menu(chat_id, user_id):
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('command:'))
+@id_handler
 def handle_command_callback(call):
     user_id = call.from_user.id
     user_data = get_user_data(user_id)
@@ -94,6 +114,7 @@ def handle_command_callback(call):
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('select_car:'))
+@id_handler
 def handle_car_selection(call):
     user_id = call.from_user.id
     user_data = get_user_data(user_id)
@@ -113,6 +134,7 @@ def handle_car_selection(call):
     bot.answer_callback_query(call.id, f"Выбрана машина: {car_name}")
 
 
+@id_handler
 def select_car_from_list(message):
     user_id = message.from_user.id
     user_data = get_user_data(user_id)
@@ -158,6 +180,7 @@ def select_car_from_list(message):
 
 
 @bot.callback_query_handler(func=lambda call: call.data == 'cancel_select')
+@id_handler
 def handle_cancel_selection(call):
     """Обработчик отмены выбора машины"""
     user_id = call.from_user.id
@@ -166,6 +189,7 @@ def handle_cancel_selection(call):
     bot.answer_callback_query(call.id, "Отменено")
 
 
+@id_handler
 @bot.callback_query_handler(func=lambda call: call.data == 'add_works')
 def ask_works(call):
     user_id = call.from_user.id
@@ -182,6 +206,7 @@ def ask_works(call):
     bot.register_next_step_handler(call.message, lambda m: add_works_to_car(m, user_id))
 
 
+@id_handler
 def add_works_to_car(message, user_id):
     user_data = get_user_data(user_id)
 
@@ -196,6 +221,7 @@ def add_works_to_car(message, user_id):
     bot.send_message(message.chat.id, result)
     print_notes_for_car(user_id)
 
+@id_handler
 @bot.callback_query_handler(func=lambda call: call.data == 'add_parts')
 def ask_parts(call):
     user_id = call.from_user.id
@@ -212,6 +238,7 @@ def ask_parts(call):
     bot.register_next_step_handler(call.message, lambda m: add_parts_to_car(m, user_id))
 
 
+@id_handler
 def add_parts_to_car(message, user_id):
     user_data = get_user_data(user_id)
 
@@ -227,6 +254,7 @@ def add_parts_to_car(message, user_id):
     print_notes_for_car(user_id)
 
 
+@id_handler
 def print_notes_for_car(user_id):
     user_data = get_user_data(user_id)
 
@@ -307,6 +335,7 @@ def print_notes_for_car(user_id):
 
     bot.send_message(user_data['chat_id'], summary, parse_mode='HTML', reply_markup=markup)
 
+@id_handler
 @bot.callback_query_handler(func=lambda call: call.data.startswith('edit_last_note:'))
 def ask_edit_last_note(call):
     """Показать список сообщений для редактирования"""
@@ -352,6 +381,7 @@ def ask_edit_last_note(call):
     bot.answer_callback_query(call.id, "Выберите сообщение")
 
 
+@id_handler
 @bot.callback_query_handler(func=lambda call: call.data.startswith('select_note:'))
 def handle_note_selection(call):
     """Обработчик выбора сообщения для редактирования"""
@@ -392,6 +422,7 @@ def handle_note_selection(call):
     bot.answer_callback_query(call.id, f"Выбрано сообщение #{note_id}")
 
 
+@id_handler
 @bot.callback_query_handler(func=lambda call: call.data.startswith('edit_note_text:'))
 def start_edit_note_text(call):
     """Начинаем редактирование текста сообщения"""
@@ -426,6 +457,7 @@ def start_edit_note_text(call):
     bot.answer_callback_query(call.id, "Введите новый текст")
 
 
+@id_handler
 @bot.callback_query_handler(func=lambda call: call.data.startswith('delete_note:'))
 def delete_note(call):
     """Удаление сообщения"""
@@ -462,6 +494,7 @@ def delete_note(call):
     bot.answer_callback_query(call.id, "Подтвердите удаление")
 
 
+@id_handler
 @bot.callback_query_handler(func=lambda call: call.data.startswith('confirm_delete:'))
 def confirm_delete_note(call):
     """Подтверждение удаления сообщения"""
@@ -482,6 +515,7 @@ def confirm_delete_note(call):
     bot.answer_callback_query(call.id, "Удаление выполнено")
 
 
+@id_handler
 def edit_note_text(message, user_id):
     """Обработчик ввода нового текста для сообщения"""
     user_data = get_user_data(user_id)
@@ -514,6 +548,7 @@ def edit_note_text(message, user_id):
     user_data.pop('editing_note_text', None)
 
 
+@id_handler
 @bot.callback_query_handler(func=lambda call: call.data.startswith('cancel_action:'))
 def handle_cancel_action(call):
     """Обработчик отмены действия"""
@@ -527,6 +562,7 @@ def handle_cancel_action(call):
     user_data.pop('editing_note_text', None)
 
 
+@id_handler
 @bot.callback_query_handler(func=lambda call: call.data.startswith('cancel_note_select:'))
 def handle_cancel_note_selection(call):
     """Обработчик отмены выбора сообщения"""
