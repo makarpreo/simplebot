@@ -1,6 +1,7 @@
 import telebot
 import telebot.types as types
-from telebot.types import ReplyKeyboardMarkup, InlineKeyboardMarkup
+from telebot.types import InlineKeyboardMarkup
+
 import config
 from main import Car, Note
 
@@ -9,17 +10,19 @@ bot = telebot.TeleBot(config.TOKEN)
 
 # Хранилище сессий пользователей
 user_sessions = {}
-user_id_list = [5506674973, #макан
-                997097309, #макар
-                24260386, #папа
-                1576118658, #саша солома
-                7645088510, #руслан
-                1497728313, #alexnader
-                1062205174] #денис
+user_id_list = [5506674973,  # макан
+                997097309,  # макар
+                24260386,  # папа
+                1576118658,  # саша солома
+                7645088510,  # руслан
+                1497728313,  # alexnader
+                1062205174]  # денис
+
+
 def id_handler(func):
     """Декоратор для обработки ошибок"""
+
     def wrapper(*args, **kwargs):
-        user_info = None
         if args[0] in user_id_list:
             print('first if')
             return func(*args, **kwargs)
@@ -28,7 +31,9 @@ def id_handler(func):
             print('second if')
             if user.id in user_id_list:
                 return func(*args, **kwargs)
+
     return wrapper
+
 
 def get_user_data(user_id):
     """Получает или создает данные пользователя"""
@@ -43,6 +48,7 @@ def get_user_data(user_id):
         }
     return user_sessions[user_id]
 
+
 @id_handler
 @bot.message_handler(commands=['start'])
 def start_command(message):
@@ -53,6 +59,7 @@ def start_command(message):
     user_data['chat_id'] = message.chat.id
 
     show_second_menu(message.chat.id, user_id)
+
 
 @id_handler
 def show_second_menu(chat_id, user_id):
@@ -221,6 +228,7 @@ def add_works_to_car(message, user_id):
     bot.send_message(message.chat.id, result)
     print_notes_for_car(user_id)
 
+
 @id_handler
 @bot.callback_query_handler(func=lambda call: call.data == 'add_parts')
 def ask_parts(call):
@@ -332,8 +340,8 @@ def print_notes_for_car(user_id):
                 summary += f"    {i}. {note_text}\n"
             summary += "\n"
 
-
     bot.send_message(user_data['chat_id'], summary, parse_mode='HTML', reply_markup=markup)
+
 
 @id_handler
 @bot.callback_query_handler(func=lambda call: call.data.startswith('edit_last_note:'))
